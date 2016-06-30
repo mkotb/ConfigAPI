@@ -29,7 +29,7 @@ public class MyConfig {
                    // lists, sets, queues, maps, and arrays are supported!
     private List<Integer> myFavouriteNumbers;
                    // supports concurrency classes!
-    private int myFavouriteAtomicNumber = new AtomicInteger(4);
+    private AtomicInteger myFavouriteAtomicNumber = new AtomicInteger(4);
                    // myWeapon will be set if it's in the config but won't exist
                    // by default
     private ItemStack myWeapon;
