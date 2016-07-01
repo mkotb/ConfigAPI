@@ -65,6 +65,7 @@ public final class ConfigFactory {
             }
 
             save(name, dummy);
+            dummyHolder.insertDummy(classOf, dummy);
             return dummy;
         }
 
