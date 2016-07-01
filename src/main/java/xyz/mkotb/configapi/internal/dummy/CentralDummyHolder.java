@@ -15,12 +15,12 @@
  */
 package xyz.mkotb.configapi.internal.dummy;
 
-import java.util.*;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class CentralDummyHolder {
     private static final CentralDummyHolder INSTANCE = new CentralDummyHolder();
-    private final Map<Class<?>, Object> dummys = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Object> dummySet = new ConcurrentHashMap<>();
 
     private CentralDummyHolder() {
     }
@@ -30,20 +30,10 @@ public final class CentralDummyHolder {
     }
 
     public <T> T dummyFrom(Class<T> classOf) {
-        return cachedDummyFrom(classOf).getValue();
-    }
-
-    private <T> Map.Entry<Class<T>, T> cachedDummyFrom(Class<T> classOf) {
-        return new HashMap.SimpleEntry<>(classOf, classOf.cast(dummys.get(classOf)));
+        return (T) dummySet.get(classOf);
     }
 
     public <T> void insertDummy(Class<T> classOf, T dummy) {
-        Class<T> previous = cachedDummyFrom(classOf).getKey();
-
-        if (previous != null) {
-            dummys.remove(previous);
-        }
-
-        dummys.put(classOf, dummy);
+        dummySet.put(classOf, dummy);
     }
 }
