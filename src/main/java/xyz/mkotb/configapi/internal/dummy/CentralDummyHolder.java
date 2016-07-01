@@ -15,14 +15,12 @@
  */
 package xyz.mkotb.configapi.internal.dummy;
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class CentralDummyHolder {
     private static final CentralDummyHolder INSTANCE = new CentralDummyHolder();
-    private final Set<CachedDummy<?>> dummySet = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Map<Class<?>, Object> dummys = new ConcurrentHashMap<>();
 
     private CentralDummyHolder() {
     }
@@ -32,25 +30,20 @@ public final class CentralDummyHolder {
     }
 
     public <T> T dummyFrom(Class<T> classOf) {
-        CachedDummy<T> cached = cachedDummyFrom(classOf);
-        return (cached == null) ? null : cached.dummy();
+        return cachedDummyFrom(classOf).getValue();
     }
 
-    private <T> CachedDummy<T> cachedDummyFrom(Class<T> classOf) {
-        Optional<CachedDummy<?>> optionalDummy = dummySet.stream()
-                .filter((e) -> e.classOf().equals(classOf))
-                .findFirst();
-
-        return (CachedDummy<T>) optionalDummy.orElse(null);
+    private <T> Map.Entry<Class<T>, T> cachedDummyFrom(Class<T> classOf) {
+        return new HashMap.SimpleEntry<>(classOf, classOf.cast(dummys.get(classOf)));
     }
 
     public <T> void insertDummy(Class<T> classOf, T dummy) {
-        CachedDummy<T> previous = cachedDummyFrom(classOf);
+        Class<T> previous = cachedDummyFrom(classOf).getKey();
 
         if (previous != null) {
-            dummySet.remove(previous);
+            dummys.remove(previous);
         }
 
-        dummySet.add(new CachedDummy<>(classOf, dummy));
+        dummys.put(classOf, dummy);
     }
 }
