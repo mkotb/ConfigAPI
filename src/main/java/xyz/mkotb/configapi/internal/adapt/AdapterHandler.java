@@ -29,7 +29,6 @@ import xyz.mkotb.configapi.internal.SerializableMemorySection;
 import xyz.mkotb.configapi.internal.adapt.impl.*;
 import xyz.mkotb.configapi.internal.adapt.impl.atomic.*;
 import xyz.mkotb.configapi.internal.adapt.impl.bukkit.*;
-import xyz.mkotb.configapi.internal.adapt.impl.primitive.*;
 import xyz.mkotb.configapi.internal.naming.NamingStrategy;
 
 import java.lang.reflect.Field;
@@ -47,20 +46,6 @@ public final class AdapterHandler {
     static {
         ADAPTERS.put(Date.class, new DateAdapter());
         ADAPTERS.put(java.sql.Date.class, new SQLDateAdapter());
-
-        ADAPTERS.put(boolean.class, new BooleanAdapter());
-        ADAPTERS.put(Boolean.class, new BooleanAdapter());
-        ADAPTERS.put(byte.class, new ByteAdapter());
-        ADAPTERS.put(Byte.class, new ByteAdapter());
-        ADAPTERS.put(double.class, new DoubleAdapter());
-        ADAPTERS.put(Double.class, new DoubleAdapter());
-        ADAPTERS.put(float.class, new FloatAdapter());
-        ADAPTERS.put(Float.class, new FloatAdapter());
-        ADAPTERS.put(long.class, new LongAdapter());
-        ADAPTERS.put(Long.class, new LongAdapter());
-        ADAPTERS.put(short.class, new ShortAdapter());
-        ADAPTERS.put(Short.class, new ShortAdapter());
-        ADAPTERS.put(String.class, new StringAdapter());
 
         ADAPTERS.put(Color.class, new ColorAdapter());
         ADAPTERS.put(ConfigurationSection.class, new ConfigurationSectionAdapter());
@@ -101,6 +86,14 @@ public final class AdapterHandler {
         if (outClass.isArray()) {
             ArrayAdapter adapter = ArrayAdapter.create(outClass.getComponentType(), this);
             return outClass.cast(adapter.write(input));
+        }
+
+        if (outClass.isPrimitive() && input.getClass().isPrimitive() && outClass == input.getClass()) {
+            return outClass.cast(input);
+        }
+
+        if (input instanceof String && outClass == String.class) {
+            return outClass.cast(input);
         }
 
         ObjectAdapter<?, ?> oldAdapter = ADAPTERS.get(input.getClass());
@@ -148,6 +141,10 @@ public final class AdapterHandler {
             MapAdapter adapter = MapAdapter.create(((Class) (((ParameterizedType) inClass.getGenericSuperclass()).getActualTypeArguments()[1])),
                     this);
             return inClass.cast(adapter.read(key, section));
+        }
+
+        if (inClass.isPrimitive() || inClass == String.class) {
+            return inClass.cast(section.get(key));
         }
 
         ObjectAdapter<?, ?> oldAdapter = ADAPTERS.get(inClass);

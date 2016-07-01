@@ -41,11 +41,7 @@ public final class CentralDummyHolder {
                 .filter((e) -> e.classOf().equals(classOf))
                 .findFirst();
 
-        if (!optionalDummy.isPresent()) {
-            return null;
-        }
-
-        return (CachedDummy<T>) optionalDummy.get();
+        return (CachedDummy<T>) optionalDummy.orElse(null);
     }
 
     public <T> void insertDummy(Class<T> classOf, T dummy) {
