@@ -85,7 +85,7 @@ public final class AdapterHandler {
         return new AdapterHandler(strategy);
     }
 
-    public synchronized <I, O> O adaptOut(I input, Class<O> outClass) {
+    public <I, O> O adaptOut(I input, Class<O> outClass) {
         if (Collection.class.isAssignableFrom(outClass)) {
             CollectionAdapter adapter = CollectionAdapter.create((Class) (((ParameterizedType) outClass.getGenericSuperclass()).getActualTypeArguments()[0]),
                     (Class<? extends Collection>) outClass, this);
@@ -132,7 +132,7 @@ public final class AdapterHandler {
         return adapter.write(input);
     }
 
-    public synchronized <I, O> I adaptIn(ConfigurationSection section, String key, Class<I> inClass) {
+    public <I, O> I adaptIn(ConfigurationSection section, String key, Class<I> inClass) {
         if (inClass.isArray()) {
             ArrayAdapter adapter = ArrayAdapter.create(inClass.getComponentType(), this);
             return inClass.cast(adapter.read(key, section));
