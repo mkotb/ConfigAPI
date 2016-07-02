@@ -27,7 +27,7 @@ public class SQLDateAdapter implements ObjectAdapter<Date, String> {
     private final DateFormat format = new SimpleDateFormat("MMM d, yyyy");
 
     @Override
-    public synchronized Date read(String key, ConfigurationSection section) {
+    public Date read(String key, ConfigurationSection section) {
         try {
             return new Date(format.parse(section.getString(key)).getTime());
         } catch (ParseException ex) {
