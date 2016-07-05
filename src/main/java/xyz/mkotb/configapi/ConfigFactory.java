@@ -15,7 +15,7 @@
  */
 package xyz.mkotb.configapi;
 
-import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,19 +25,19 @@ import xyz.mkotb.configapi.internal.InternalsHelper;
 import xyz.mkotb.configapi.internal.SerializableMemorySection;
 import xyz.mkotb.configapi.internal.adapt.AdapterHandler;
 import xyz.mkotb.configapi.internal.dummy.CentralDummyHolder;
-import xyz.mkotb.configapi.internal.naming.NamingStrategies;
+import xyz.mkotb.configapi.internal.naming.CamelCaseNamingStrategy;
 import xyz.mkotb.configapi.internal.naming.NamingStrategy;
 
 import java.io.File;
 import java.io.IOException;
 
 public final class ConfigFactory {
-    private volatile NamingStrategy namingStrategy = NamingStrategies.from("camelcase");
+    private volatile NamingStrategy namingStrategy = new CamelCaseNamingStrategy();
     private final JavaPlugin plugin;
 
     private ConfigFactory(JavaPlugin plugin) {
         this.plugin = plugin;
-        File directory = configDirectory();
+        File directory = plugin.getDataFolder();
 
         if (directory.exists()) {
             directory.mkdirs();
@@ -69,7 +69,9 @@ public final class ConfigFactory {
             return dummy;
         }
 
-        return null;
+        AdapterHandler handler = AdapterHandler.create(namingStrategy);
+        FileConfiguration data = YamlConfiguration.loadConfiguration(config);
+        return handler.adaptIn(data, null, classOf);
     }
 
     public <T> void save(String name, T object) {
@@ -77,6 +79,7 @@ public final class ConfigFactory {
 
         if (!config.exists()) {
             try {
+                config.getParentFile().mkdirs();
                 config.createNewFile();
             } catch (IOException ex) {
                 throw new InternalProcessingException("Could not create file!", ex);
@@ -85,7 +88,7 @@ public final class ConfigFactory {
 
         FileConfiguration data = YamlConfiguration.loadConfiguration(config);
         AdapterHandler handler = AdapterHandler.create(namingStrategy);
-        ConfigurationSection section = handler.adaptOut(object, ConfigurationSection.class);
+        MemorySection section = handler.adaptOut(object, MemorySection.class);
 
         ((SerializableMemorySection) section).map().forEach(data::set);
 

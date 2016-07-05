@@ -36,14 +36,26 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.*;
 
 public final class AdapterHandler {
+    private static final Map<Class<?>, Class<?>> PRIMITIVE_BOXES = new ConcurrentHashMap<>();
     private static final Map<Class<?>, ObjectAdapter<?, ?>> ADAPTERS = new ConcurrentHashMap<>();
 
     static {
+        PRIMITIVE_BOXES.put(boolean.class, Boolean.class);
+        PRIMITIVE_BOXES.put(char.class, Character.class);
+        PRIMITIVE_BOXES.put(byte.class, Byte.class);
+        PRIMITIVE_BOXES.put(short.class, Short.class);
+        PRIMITIVE_BOXES.put(int.class, Integer.class);
+        PRIMITIVE_BOXES.put(long.class, Long.class);
+        PRIMITIVE_BOXES.put(float.class, Float.class);
+        PRIMITIVE_BOXES.put(double.class, Double.class);
+        PRIMITIVE_BOXES.put(void.class, Void.class);
+
         ADAPTERS.put(Date.class, new DateAdapter());
         ADAPTERS.put(java.sql.Date.class, new SQLDateAdapter());
 
@@ -88,26 +100,33 @@ public final class AdapterHandler {
             return outClass.cast(adapter.write(input));
         }
 
-        if (outClass.isPrimitive() && input.getClass().isPrimitive() && outClass == input.getClass()) {
+        if (PRIMITIVE_BOXES.values().contains(outClass)) {
             return outClass.cast(input);
         }
 
-        if (input instanceof String && outClass == String.class) {
+        if (outClass == String.class) {
             return outClass.cast(input);
         }
 
         ObjectAdapter<?, ?> oldAdapter = ADAPTERS.get(input.getClass());
 
         if (oldAdapter == null) {
-            MemorySection section = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class,
-                    MemorySection.class);
-            Field[] fields = input.getClass().getFields();
+            MemorySection section = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class);
+            InternalsHelper.setField("map", section, new LinkedHashMap());
+            Field[] fields = input.getClass().getDeclaredFields();
 
             for (Field field : fields) {
                 Object value = InternalsHelper.getField(field, input);
 
-                if (value != null)
-                    section.set(namingStrategy.rename(field.getName()), adaptOut(value, field.getDeclaringClass()));
+                if (value != null) {
+                    Class<?> fieldClass = field.getType();
+
+                    if (fieldClass.isPrimitive()) {
+                        fieldClass = PRIMITIVE_BOXES.get(fieldClass);
+                    }
+
+                    section.set(namingStrategy.rename(field.getName()), adaptOut(value, fieldClass));
+                }
             }
 
             return outClass.cast(section);
@@ -143,7 +162,7 @@ public final class AdapterHandler {
             return inClass.cast(adapter.read(key, section));
         }
 
-        if (inClass.isPrimitive() || inClass == String.class) {
+        if (inClass.isPrimitive() || inClass == String.class || PRIMITIVE_BOXES.values().contains(inClass)) {
             return inClass.cast(section.get(key));
         }
 
@@ -152,7 +171,7 @@ public final class AdapterHandler {
         if (oldAdapter == null) {
             ConfigurationSection readingSection = (key == null) ? section : section.getConfigurationSection(key);
             I instance = InternalsHelper.newInstance(inClass);
-            Field[] fields = inClass.getClass().getFields();
+            Field[] fields = inClass.getDeclaredFields();
 
             for (Field field : fields) {
                 if (Modifier.isTransient(field.getModifiers())) {
@@ -175,7 +194,13 @@ public final class AdapterHandler {
                     continue;
                 }
 
-                InternalsHelper.setField(field, instance, adaptIn(readingSection, name, field.getDeclaringClass()));
+                Class<?> fieldClass = field.getType();
+
+                if (fieldClass.isPrimitive()) {
+                    fieldClass = PRIMITIVE_BOXES.get(fieldClass);
+                }
+
+                InternalsHelper.setField(field, instance, adaptIn(readingSection, name, fieldClass));
             }
 
             return instance;

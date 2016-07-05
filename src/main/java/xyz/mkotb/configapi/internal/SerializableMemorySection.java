@@ -18,29 +18,32 @@ package xyz.mkotb.configapi.internal;
 import org.bukkit.configuration.MemorySection;
 
 import java.io.Serializable;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class SerializableMemorySection extends MemorySection implements Serializable {
+    private Map<String, Object> map;
+
     @Override
     public Object get(String path, Object def) {
-        Object value = map.get(path);
+        Object value = map().get(path);
         return value == null ? def : value;
     }
 
     @Override
     public void set(String path, Object value) {
-        map.put(path, value);
+        map().put(path, value);
     }
 
     @Override
     public Set<String> getKeys(boolean deep) {
-        return map.keySet();
+        return map().keySet();
     }
 
     @Override
     public Map<String, Object> getValues(boolean deep) {
-        return map;
+        return map();
     }
 
     @Override
@@ -49,6 +52,10 @@ public class SerializableMemorySection extends MemorySection implements Serializ
     }
 
     public Map<String, Object> map() {
+        if (map == null) {
+            map = new LinkedHashMap<>();
+        }
+
         return map;
     }
 }

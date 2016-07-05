@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CamelCaseNamingStrategy implements NamingStrategy {
-    private static final Pattern CAMEL_PATTERN = Pattern.compile("/(?<=[^_\\r\\n])(?:(?>_+)|(?=[A-Z])(?:(?<![A-Z])|(?=[A-Z][a-z]))" +
-            "|(?>(?=\\d))(?<!\\d)|(?<=\\d)(?=[^\\d\\r\\n]))/g");
+    private static final Pattern CAMEL_PATTERN = Pattern.compile("(?<=[^_\\r\\n])(?:(?>_+)|(?=[A-Z])(?:(?<![A-Z])|(?=[A-Z][a-z]))" +
+            "|(?>(?=\\d))(?<!\\d)|(?<=\\d)(?=[^\\d\\r\\n]))");
 
     @Override
     public String rename(String input) {

@@ -32,12 +32,11 @@ public final class InternalsHelper {
      * Creates an instance of the class without calling it's constructor.
      * clazz must implement java.io.Serializable
      */
-    public static <T> T newInstanceWithoutInit(Class<T> clazz,
-                               Class<? super T> parent) {
+    public static <T> T newInstanceWithoutInit(Class<T> clazz) {
         try {
             ReflectionFactory rf =
                     ReflectionFactory.getReflectionFactory();
-            Constructor objDef = parent.getDeclaredConstructor();
+            Constructor objDef = Object.class.getDeclaredConstructor();
             Constructor intConstr = rf.newConstructorForSerialization(clazz, objDef);
 
             return clazz.cast(intConstr.newInstance());
