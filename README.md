@@ -62,7 +62,7 @@ my-favourite-number: 3
 my-favourite-atomic-number: 4
 ```
 
-As you can see, it only saved the fields which were already set as defaults. If you haven't noticed already, the API changed the naming conventions from Java lower camel case (`likeThis`) to the conventional YAML namespace (`like-this`). You can modify which naming convention the API uses. There will be more information you can refer to on this on the wiki (in progress).
+As you can see, it only saved the fields which were already set as defaults. If you haven't noticed already, the API changed the naming conventions from Java lower camel case (`likeThis`) to the conventional YAML namespace (`like-this`). You can modify which naming convention the API uses. There will be more information you can refer to on this on [the wiki]( Wiki).
 
 If we were to add a list of our favourite numbers to the config manually, we will be able to see the API being able to load them up without a problem:
 
