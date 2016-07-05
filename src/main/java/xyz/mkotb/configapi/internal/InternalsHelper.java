@@ -21,11 +21,23 @@ import xyz.mkotb.configapi.internal.naming.NamingStrategy;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class InternalsHelper {
     private InternalsHelper() {
+    }
+
+    public static Class typeOf(Field field, int index) {
+        Type genericType = field.getGenericType();
+
+        if (genericType instanceof ParameterizedType) {
+            return (Class) ((ParameterizedType) genericType).getActualTypeArguments()[index];
+        }
+
+        return Object.class;
     }
 
     /*

@@ -33,16 +33,13 @@ import xyz.mkotb.configapi.internal.naming.NamingStrategy;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.*;
 
 public final class AdapterHandler {
     private static final Map<Class<?>, Class<?>> PRIMITIVE_BOXES = new ConcurrentHashMap<>();
+    private static final Set<Class<?>> FILTER_CLASSES = new HashSet<>();
     private static final Map<Class<?>, ObjectAdapter<?, ?>> ADAPTERS = new ConcurrentHashMap<>();
 
     static {
@@ -70,6 +67,12 @@ public final class AdapterHandler {
         ADAPTERS.put(AtomicIntegerArray.class, new AtomicIntegerArrayAdapter());
         ADAPTERS.put(AtomicLong.class, new AtomicLongAdapter());
         ADAPTERS.put(AtomicLongArray.class, new AtomicLongArrayAdapter());
+
+        FILTER_CLASSES.addAll(ADAPTERS.keySet());
+        FILTER_CLASSES.addAll(PRIMITIVE_BOXES.keySet());
+        FILTER_CLASSES.add(String.class);
+        FILTER_CLASSES.add(Map.class);
+        FILTER_CLASSES.add(Collection.class);
     }
 
     private final NamingStrategy namingStrategy;
@@ -83,14 +86,18 @@ public final class AdapterHandler {
     }
 
     public <I, O> O adaptOut(I input, Class<O> outClass) {
+        return adaptOut(input, outClass, null);
+    }
+
+    public <I, O> O adaptOut(I input, Class<O> outClass, Class<?> type) {
         if (Collection.class.isAssignableFrom(outClass)) {
-            CollectionAdapter adapter = CollectionAdapter.create((Class) (((ParameterizedType) outClass.getGenericSuperclass()).getActualTypeArguments()[0]),
+            CollectionAdapter adapter = CollectionAdapter.create(type,
                     (Class<? extends Collection>) outClass, this);
             return outClass.cast(adapter.write((Collection) input));
         }
 
         if (Map.class.isAssignableFrom(outClass)) {
-            MapAdapter adapter = MapAdapter.create(((Class) (((ParameterizedType) outClass.getGenericSuperclass()).getActualTypeArguments()[1])),
+            MapAdapter adapter = MapAdapter.create(type,
                     this);
             return outClass.cast(adapter.write((Map) input));
         }
@@ -119,13 +126,26 @@ public final class AdapterHandler {
                 Object value = InternalsHelper.getField(field, input);
 
                 if (value != null) {
+                    Class<?> fieldType = null;
                     Class<?> fieldClass = field.getType();
+                    Class<?> beforeFieldClass = fieldClass;
+
+                    if (!FILTER_CLASSES.stream().anyMatch((e) -> e.isAssignableFrom(beforeFieldClass))
+                            && !fieldClass.isArray()) {
+                        fieldClass = MemorySection.class;
+                    }
 
                     if (fieldClass.isPrimitive()) {
                         fieldClass = PRIMITIVE_BOXES.get(fieldClass);
                     }
 
-                    section.set(namingStrategy.rename(field.getName()), adaptOut(value, fieldClass));
+                    if (Map.class.isAssignableFrom(fieldClass)) {
+                        fieldType = InternalsHelper.typeOf(field, 1);
+                    } else if (Collection.class.isAssignableFrom(fieldClass)) {
+                        fieldType = InternalsHelper.typeOf(field, 0);
+                    }
+
+                    section.set(namingStrategy.rename(field.getName()), adaptOut(value, fieldClass, fieldType));
                 }
             }
 
@@ -144,20 +164,24 @@ public final class AdapterHandler {
         return adapter.write(input);
     }
 
-    public <I, O> I adaptIn(ConfigurationSection section, String key, Class<I> inClass) {
+    public <I> I adaptIn(ConfigurationSection section, String key, Class<I> inClass) {
+        return adaptIn(section, key, inClass, null);
+    }
+
+    public <I, O> I adaptIn(ConfigurationSection section, String key, Class<I> inClass, Class<?> type) {
         if (inClass.isArray()) {
             ArrayAdapter adapter = ArrayAdapter.create(inClass.getComponentType(), this);
             return inClass.cast(adapter.read(key, section));
         }
 
         if (Collection.class.isAssignableFrom(inClass)) {
-            CollectionAdapter adapter = CollectionAdapter.create((Class) (((ParameterizedType) inClass.getGenericSuperclass()).getActualTypeArguments()[0]),
+            CollectionAdapter adapter = CollectionAdapter.create(type,
                     (Class<? extends Collection>) inClass, this);
             return inClass.cast(adapter.read(key, section));
         }
 
         if (Map.class.isAssignableFrom(inClass)) {
-            MapAdapter adapter = MapAdapter.create(((Class) (((ParameterizedType) inClass.getGenericSuperclass()).getActualTypeArguments()[1])),
+            MapAdapter adapter = MapAdapter.create(type,
                     this);
             return inClass.cast(adapter.read(key, section));
         }
@@ -194,13 +218,20 @@ public final class AdapterHandler {
                     continue;
                 }
 
+                Class<?> fieldType = null;
                 Class<?> fieldClass = field.getType();
 
                 if (fieldClass.isPrimitive()) {
                     fieldClass = PRIMITIVE_BOXES.get(fieldClass);
                 }
 
-                InternalsHelper.setField(field, instance, adaptIn(readingSection, name, fieldClass));
+                if (Map.class.isAssignableFrom(fieldClass)) {
+                    fieldType = InternalsHelper.typeOf(field, 1);
+                } else if (Collection.class.isAssignableFrom(fieldClass)) {
+                    fieldType = InternalsHelper.typeOf(field, 0);
+                }
+
+                InternalsHelper.setField(field, instance, adaptIn(readingSection, name, fieldClass, fieldType));
             }
 
             return instance;

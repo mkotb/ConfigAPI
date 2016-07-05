@@ -26,19 +26,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CollectionAdapter<E> implements ObjectAdapter<Collection, List<Object>> {
-    private static final Map<Class<?>, Class<?>> IMPLEMENTATION_MAP = new ConcurrentHashMap<Class<?>, Class<?>>() {{
-        put(List.class, ArrayList.class);
-        put(Set.class, HashSet.class);
-        put(Queue.class, PriorityQueue.class);
-    }};
     private final Class<E> type;
     private final Class<? extends Collection> implementationClass;
     private final AdapterHandler handler;
 
     private CollectionAdapter(Class<E> type, Class<? extends Collection> collectionClass, AdapterHandler handler) {
         this.type = type;
-        Optional<Class<?>> optional = findImplementation(collectionClass);
-        this.implementationClass = optional.isPresent() ? (Class<? extends Collection>) optional.get() : collectionClass;
+        this.implementationClass = findImplementation(collectionClass);
         this.handler = handler;
     }
 
@@ -46,10 +40,16 @@ public class CollectionAdapter<E> implements ObjectAdapter<Collection, List<Obje
         return new CollectionAdapter<>(type, collectionClass, handler);
     }
 
-    private static Optional<Class<?>> findImplementation(Class<? extends Collection> cls) {
-        return IMPLEMENTATION_MAP.keySet().stream()
-                .filter(cls::equals)
-                .findFirst();
+    private static Class<? extends Collection> findImplementation(Class<? extends Collection> cls) {
+        if (List.class.isAssignableFrom(cls)) {
+            return ArrayList.class;
+        } else if (Set.class.isAssignableFrom(cls)) {
+            return HashSet.class;
+        } else if (Queue.class.isAssignableFrom(cls)) {
+            return PriorityQueue.class;
+        }
+
+        return cls;
     }
 
     @Override
