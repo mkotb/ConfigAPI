@@ -55,6 +55,7 @@ public final class AdapterHandler {
 
         ADAPTERS.put(Date.class, new DateAdapter());
         ADAPTERS.put(java.sql.Date.class, new SQLDateAdapter());
+        ADAPTERS.put(UUID.class, new UUIDAdapter());
 
         ADAPTERS.put(Color.class, new ColorAdapter());
         ADAPTERS.put(ConfigurationSection.class, new ConfigurationSectionAdapter());
