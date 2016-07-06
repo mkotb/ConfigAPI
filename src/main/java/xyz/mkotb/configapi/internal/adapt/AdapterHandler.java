@@ -84,6 +84,10 @@ public final class AdapterHandler {
     public static AdapterHandler create(NamingStrategy strategy) {
         return new AdapterHandler(strategy);
     }
+    
+    public static <I> void registerAdapter(Class<I> clazz, ObjectAdapter<I, ?> adapter) {
+        ADAPTERS.replace(clazz, adapter);
+    }
 
     public <I, O> O adaptOut(I input, Class<O> outClass) {
         return adaptOut(input, outClass, null);
