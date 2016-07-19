@@ -111,7 +111,7 @@ public final class ConfigFactory {
         });
 
         try (PrintWriter out = new PrintWriter(config)){
-            out.println(sb.toString());
+            out.print(sb.toString());
         } catch (IOException ex) {
             throw new InternalProcessingException("Unable to save config to file!", ex);
         }

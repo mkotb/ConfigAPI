@@ -34,9 +34,11 @@ public class MyPlugin extends JavaPlugin {
     }
 }
 
+@HeaderComment("This is my header comment")
 public class MyConfig {
                     // init values will be saved as part of the "default config"
     private String startMessage = "This awesome bukkit plugin has started!";
+    @Comment("Put in your favourite number here!")
     @RequiredField // if this field is not set in the config file due to user error
                    // an exception will be thrown
     private int myFavouriteNumber = 3;
@@ -67,7 +69,9 @@ In the following example, we displayed majority of the features available in the
 As of currently, if you were to setup and run this plugin, it would write the following to `config.yml` using the default values:
 
 ```yml
+# This is my header comment
 start-message: This awesome bukkit plugin has started!
+# Put in your favourite number here!
 my-favourite-number: 3
 my-favourite-atomic-number: 4
 ```
