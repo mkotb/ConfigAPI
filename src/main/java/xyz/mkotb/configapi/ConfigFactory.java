@@ -30,6 +30,7 @@ import xyz.mkotb.configapi.internal.naming.NamingStrategy;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 public final class ConfigFactory {
     private volatile NamingStrategy namingStrategy = new CamelCaseNamingStrategy();
@@ -86,14 +87,18 @@ public final class ConfigFactory {
             }
         }
 
-        FileConfiguration data = YamlConfiguration.loadConfiguration(config);
         AdapterHandler handler = AdapterHandler.create(namingStrategy);
         MemorySection section = handler.adaptOut(object, MemorySection.class);
 
-        ((SerializableMemorySection) section).map().forEach(data::set);
+        StringBuilder sb = new StringBuilder();
+        ((SerializableMemorySection) section).map().forEach((k, v) -> {
+            FileConfiguration fieldData = new YamlConfiguration();
+            fieldData.set(k, v);
+            sb.append(fieldData.saveToString());
+        });
 
-        try {
-            data.save(config);
+        try (PrintWriter out = new PrintWriter(config)){
+            out.println(sb.toString());
         } catch (IOException ex) {
             throw new InternalProcessingException("Unable to save config to file!", ex);
         }
