@@ -19,6 +19,7 @@ import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import xyz.mkotb.configapi.comment.CommentHelper;
 import xyz.mkotb.configapi.ex.ClassStructureException;
 import xyz.mkotb.configapi.ex.InternalProcessingException;
 import xyz.mkotb.configapi.internal.InternalsHelper;
@@ -31,6 +32,8 @@ import xyz.mkotb.configapi.internal.naming.NamingStrategy;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.util.Map;
 
 public final class ConfigFactory {
     private volatile NamingStrategy namingStrategy = new CamelCaseNamingStrategy();
@@ -87,12 +90,23 @@ public final class ConfigFactory {
             }
         }
 
+        StringBuilder sb = new StringBuilder();
+        Map<String, String[]> comments = CommentHelper.extractComments(object, namingStrategy);
+        String[] header = CommentHelper.extractHeader(object.getClass());
         AdapterHandler handler = AdapterHandler.create(namingStrategy);
         MemorySection section = handler.adaptOut(object, MemorySection.class);
 
-        StringBuilder sb = new StringBuilder();
+        if (header != null) {
+            CommentHelper.encodeComments(header, sb);
+        }
+
         ((SerializableMemorySection) section).map().forEach((k, v) -> {
             FileConfiguration fieldData = new YamlConfiguration();
+
+            if (comments.containsKey(k)) {
+                CommentHelper.encodeComments(comments.get(k), sb);
+            }
+
             fieldData.set(k, v);
             sb.append(fieldData.saveToString());
         });
