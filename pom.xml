@@ -8,6 +8,27 @@
     <artifactId>config-api</artifactId>
     <version>1.0</version>
 
+    <name>ConfigAPI</name>
+    <description>GSON-like ORM for the Bukkit Config API</description>
+    <url>http://github.com/mkotb/ConfigAPI</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <scm>
+        <connection>scm:git:git@github.com:mkotb/ConfigAPI.git</connection>
+        <developerConnection>scm:git:git@github.com:mkotb/ConfigAPI.git</developerConnection>
+        <url>git@github.com:mkotb/ConfigAPI.git</url>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>ISC License</name>
+            <url>http://choosealicense.com/licenses/isc/</url>
+        </license>
+    </licenses>
+
     <repositories>
         <repository>
             <id>spigot-repo</id>

@@ -52,6 +52,16 @@ public class PartOfConfig {
 
 In the following example, we displayed majority of the features available in the API. The `fromFile()` method takes care of all the initial processes you may need, such as creating the new file and placing default values. Many additional classes such as color, offline players, and vectors are supported to be saved. In the future, extensibility to the Adapter API will be added to where you can use your own data types which can be converted.
 
+This project is on maven central! You can add it to your project using the following:
+
+```xml
+<dependency>
+  <groupId>xyz.mkotb</groupId>
+  <artifactId>config-api</artifactId>
+  <version>1.0</version>
+</dependency>
+```
+
 ## Interaction with the File
 
 As of currently, if you were to setup and run this plugin, it would write the following to `config.yml` using the default values:
