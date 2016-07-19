@@ -32,7 +32,6 @@ import xyz.mkotb.configapi.internal.naming.NamingStrategy;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 import java.util.Map;
 
 public final class ConfigFactory {
