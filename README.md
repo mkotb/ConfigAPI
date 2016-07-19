@@ -1,5 +1,15 @@
 # ConfigAPI
-This project is a GSON-like project for Bukkit's YML Config API. If you're not familiar with GSON, let me show you a quick example of what you can do with this API:
+This project is a GSON-like project for Bukkit's YML Config API. This project is on maven central! You can add it to your project using the following:
+
+```xml
+<dependency>
+  <groupId>xyz.mkotb</groupId>
+  <artifactId>config-api</artifactId>
+  <version>1.0</version>
+</dependency>
+```
+
+If you're not familiar with GSON, let me show you a quick example of what you can do with this API:
 
 ```java
 public class MyPlugin extends JavaPlugin {
@@ -51,16 +61,6 @@ public class PartOfConfig {
 ```
 
 In the following example, we displayed majority of the features available in the API. The `fromFile()` method takes care of all the initial processes you may need, such as creating the new file and placing default values. Many additional classes such as color, offline players, and vectors are supported to be saved. In the future, extensibility to the Adapter API will be added to where you can use your own data types which can be converted.
-
-This project is on maven central! You can add it to your project using the following:
-
-```xml
-<dependency>
-  <groupId>xyz.mkotb</groupId>
-  <artifactId>config-api</artifactId>
-  <version>1.0</version>
-</dependency>
-```
 
 ## Interaction with the File
 
