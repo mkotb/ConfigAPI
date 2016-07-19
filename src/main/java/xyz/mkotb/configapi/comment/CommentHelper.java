@@ -28,7 +28,7 @@ public final class CommentHelper {
 
     public static void encodeComments(String[] comments, StringBuilder builder) {
         for (String comment : comments) {
-            builder.append("# ").append(comment).append("\n");
+            builder.append("# ").append(comment).append(System.lineSeparator());
         }
     }
 
