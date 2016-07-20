@@ -82,6 +82,14 @@ public final class InternalsHelper {
         return fieldMap;
     }
 
+    public static Field staticFieldFor(Class<?> clazz, String name) {
+        try {
+            return clazz.getDeclaredField(name);
+        } catch (NoSuchFieldException ex) {
+            return null;
+        }
+    }
+
     public static Field fieldFor(Object object, String name) {
         try {
             return object.getClass().getDeclaredField(name);

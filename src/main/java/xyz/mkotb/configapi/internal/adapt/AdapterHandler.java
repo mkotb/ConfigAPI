@@ -19,6 +19,7 @@ import org.bukkit.Color;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import xyz.mkotb.configapi.RequiredField;
@@ -57,11 +58,8 @@ public final class AdapterHandler {
         ADAPTERS.put(java.sql.Date.class, new SQLDateAdapter());
         ADAPTERS.put(UUID.class, new UUIDAdapter());
 
-        ADAPTERS.put(Color.class, new ColorAdapter());
         ADAPTERS.put(ConfigurationSection.class, new ConfigurationSectionAdapter());
-        ADAPTERS.put(ItemStack.class, new ItemStackAdapter());
         ADAPTERS.put(OfflinePlayer.class, new OfflinePlayerAdapter());
-        ADAPTERS.put(Vector.class, new VectorAdapter());
 
         ADAPTERS.put(AtomicBoolean.class, new AtomicBooleanAdapter());
         ADAPTERS.put(AtomicInteger.class, new AtomicIntegerAdapter());
@@ -123,6 +121,13 @@ public final class AdapterHandler {
         ObjectAdapter<?, ?> oldAdapter = ADAPTERS.get(input.getClass());
 
         if (oldAdapter == null) {
+            if (ConfigurationSerializableHelper.isRegistered(input.getClass()) && // ensure registration for deserialization purposes
+                    input instanceof ConfigurationSerializable) {
+                MemorySection memorySection = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class);
+                ((ConfigurationSerializable) input).serialize().forEach(memorySection::set);
+                return outClass.cast(memorySection);
+            }
+
             MemorySection section = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class);
             InternalsHelper.setField("map", section, new LinkedHashMap());
             Field[] fields = input.getClass().getDeclaredFields();
@@ -198,6 +203,12 @@ public final class AdapterHandler {
         ObjectAdapter<?, ?> oldAdapter = ADAPTERS.get(inClass);
 
         if (oldAdapter == null) {
+            if (ConfigurationSerializableHelper.isRegistered(inClass) &&
+                    ConfigurationSerializable.class.isAssignableFrom(inClass)) {
+                return ConfigurationSerializableHelper.deserialize(ConfigurationSerializableHelper.toMap(section),
+                        inClass);
+            }
+
             ConfigurationSection readingSection = (key == null) ? section : section.getConfigurationSection(key);
             I instance = InternalsHelper.newInstance(inClass);
             Field[] fields = inClass.getDeclaredFields();
