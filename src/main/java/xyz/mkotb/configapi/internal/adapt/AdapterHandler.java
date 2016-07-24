@@ -15,13 +15,10 @@
  */
 package xyz.mkotb.configapi.internal.adapt;
 
-import org.bukkit.Color;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.Vector;
 import xyz.mkotb.configapi.RequiredField;
 import xyz.mkotb.configapi.ex.ClassStructureException;
 import xyz.mkotb.configapi.ex.InvalidConfigurationException;
@@ -59,6 +56,7 @@ public final class AdapterHandler {
         ADAPTERS.put(UUID.class, new UUIDAdapter());
 
         ADAPTERS.put(ConfigurationSection.class, new ConfigurationSectionAdapter());
+        ADAPTERS.put(EnchantmentAdapter.class, new EnchantmentAdapter());
         ADAPTERS.put(OfflinePlayer.class, new OfflinePlayerAdapter());
 
         ADAPTERS.put(AtomicBoolean.class, new AtomicBooleanAdapter());
@@ -115,30 +113,25 @@ public final class AdapterHandler {
         if (Collection.class.isAssignableFrom(input.getClass())) {
             CollectionAdapter adapter = CollectionAdapter.create(type,
                     (Class<? extends Collection>) outClass, this);
-            System.out.println("collection");
             return outClass.cast(adapter.write((Collection) input));
         }
 
         if (Map.class.isAssignableFrom(outClass)) {
             MapAdapter adapter = MapAdapter.create(type,
                     this);
-            System.out.println("map");
             return outClass.cast(adapter.write((Map) input));
         }
 
         if (outClass.isArray()) {
             ArrayAdapter adapter = ArrayAdapter.create(outClass.getComponentType(), this);
-            System.out.println("array");
             return outClass.cast(adapter.write(input));
         }
 
         if (PRIMITIVE_BOXES.values().contains(outClass)) {
-            System.out.println("primitive");
             return outClass.cast(input);
         }
 
         if (outClass == String.class) {
-            System.out.println("string");
             return outClass.cast(input);
         }
 
@@ -149,7 +142,6 @@ public final class AdapterHandler {
                     input instanceof ConfigurationSerializable) {
                 MemorySection memorySection = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class);
                 ((ConfigurationSerializable) input).serialize().forEach(memorySection::set);
-                System.out.println("serializable");
                 return outClass.cast(memorySection);
             }
 
@@ -168,21 +160,17 @@ public final class AdapterHandler {
                     if (!FILTER_CLASSES.stream().anyMatch((e) -> e.isAssignableFrom(beforeFieldClass))
                             && !fieldClass.isArray()) {
                         fieldClass = MemorySection.class;
-                        System.out.println("expecting a memory section");
                     }
 
                     if (fieldClass.isPrimitive()) {
                         fieldClass = PRIMITIVE_BOXES.get(fieldClass);
-                        System.out.println("expecting a primitive");
                     }
 
                     if (Map.class.isAssignableFrom(fieldClass)) {
                         fieldType = InternalsHelper.typeOf(field, 1);
-                        System.out.println("expecting map, got type");
                     } else if (Collection.class.isAssignableFrom(fieldClass)) {
                         fieldType = InternalsHelper.typeOf(field, 0);
                         fieldClass = Object.class;
-                        System.out.println("expecting collection, got type");
                     } else if (fieldClass.isArray()) {
                         fieldClass = Object[].class;
                     }
@@ -191,7 +179,6 @@ public final class AdapterHandler {
                 }
             }
 
-            System.out.println("casting section to " + outClass.getName());
             return outClass.cast(section);
         }
 
