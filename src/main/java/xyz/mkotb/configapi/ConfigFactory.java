@@ -15,6 +15,7 @@
  */
 package xyz.mkotb.configapi;
 
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -32,6 +33,7 @@ import xyz.mkotb.configapi.internal.naming.NamingStrategy;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.util.Map;
 
 public final class ConfigFactory {
@@ -67,6 +69,7 @@ public final class ConfigFactory {
                 }
             }
 
+            colourizeFields(dummy);
             save(name, dummy);
             dummyHolder.insertDummy(classOf, dummy);
             return dummy;
@@ -74,7 +77,7 @@ public final class ConfigFactory {
 
         AdapterHandler handler = AdapterHandler.create(namingStrategy);
         FileConfiguration data = YamlConfiguration.loadConfiguration(config);
-        return handler.adaptIn(data, null, classOf);
+        return colourizeFields(handler.adaptIn(data, null, classOf));
     }
 
     public <T> void save(String name, T object) {
@@ -115,6 +118,28 @@ public final class ConfigFactory {
         } catch (IOException ex) {
             throw new InternalProcessingException("Unable to save config to file!", ex);
         }
+    }
+
+    private <T> T colourizeFields(T object) {
+        for (Field field : object.getClass().getDeclaredFields()) {
+            if (!field.isAnnotationPresent(Coloured.class)) {
+                continue;
+            }
+
+            if (field.getType() != String.class) {
+                continue;
+            }
+
+            Coloured annotation = field.getDeclaredAnnotation(Coloured.class);
+            String value = InternalsHelper.getField(field, object);
+
+            if (value != null) {
+                InternalsHelper.setField(field, object, AdapterHandler.translateAlternateColorCodes(
+                        ChatColor.COLOR_CHAR, annotation.value(), value));
+            }
+        }
+
+        return object;
     }
 
     private File configDirectory() {

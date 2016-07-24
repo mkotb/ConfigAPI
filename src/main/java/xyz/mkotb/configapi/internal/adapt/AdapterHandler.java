@@ -15,10 +15,12 @@
  */
 package xyz.mkotb.configapi.internal.adapt;
 
+import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import xyz.mkotb.configapi.Coloured;
 import xyz.mkotb.configapi.RequiredField;
 import xyz.mkotb.configapi.ex.ClassStructureException;
 import xyz.mkotb.configapi.ex.InvalidConfigurationException;
@@ -175,7 +177,14 @@ public final class AdapterHandler {
                         fieldClass = Object[].class;
                     }
 
-                    section.set(namingStrategy.rename(field.getName()), adaptOut(value, fieldClass, fieldType));
+                    Object obj = adaptOut(value, fieldClass, fieldType);
+
+                    if (obj instanceof String && field.isAnnotationPresent(Coloured.class)) {
+                        Coloured annotation = field.getDeclaredAnnotation(Coloured.class);
+                        obj = translateAlternateColorCodes(annotation.value(), ChatColor.COLOR_CHAR, (String) obj);
+                    }
+
+                    section.set(namingStrategy.rename(field.getName()), obj);
                 }
             }
 
@@ -282,5 +291,16 @@ public final class AdapterHandler {
         }
 
         return adapter.read(key, section);
+    }
+
+    public static String translateAlternateColorCodes(char colorChar, char altColorChar, String textToTranslate) {
+        char[] b = textToTranslate.toCharArray();
+        for (int i = 0; i < b.length - 1; i++) {
+            if (b[i] == altColorChar && "0123456789AaBbCcDdEeFfKkLlMmNnOoRr".indexOf(b[i+1]) > -1) {
+                b[i] = colorChar;
+                b[i+1] = Character.toLowerCase(b[i+1]);
+            }
+        }
+        return new String(b);
     }
 }
