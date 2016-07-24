@@ -25,8 +25,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class InternalsHelper {
+    private static final Map<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
+
     private InternalsHelper() {
     }
 
@@ -84,7 +87,16 @@ public final class InternalsHelper {
 
     public static Field staticFieldFor(Class<?> clazz, String name) {
         try {
-            return clazz.getDeclaredField(name);
+            String id = fieldIdentifier(clazz, name);
+
+            if (FIELD_CACHE.containsKey(id)) {
+                return FIELD_CACHE.get(id);
+            }
+
+            Field field = clazz.getDeclaredField(name);
+
+            FIELD_CACHE.put(id, field);
+            return field;
         } catch (NoSuchFieldException ex) {
             return null;
         }
@@ -92,7 +104,15 @@ public final class InternalsHelper {
 
     public static Field fieldFor(Object object, String name) {
         try {
-            return object.getClass().getDeclaredField(name);
+            String id = fieldIdentifier(object.getClass(), name);
+
+            if (FIELD_CACHE.containsKey(id)) {
+                return FIELD_CACHE.get(id);
+            }
+            Field field = object.getClass().getDeclaredField(name);
+
+            FIELD_CACHE.put(id, field);
+            return field;
         } catch (NoSuchFieldException ignored) {
             return null;
         }
@@ -120,5 +140,13 @@ public final class InternalsHelper {
         } catch (IllegalAccessException ex) {
             return false;
         }
+    }
+
+    private static String fieldIdentifier(Class<?> cls, String fieldName) {
+        return cls.getName() + "||" + fieldName;
+    }
+
+    private static String fieldIdentifier(Field field) {
+        return field.getDeclaringClass().getName() + "||" + field.getName();
     }
 }
