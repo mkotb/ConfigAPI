@@ -17,7 +17,10 @@ package xyz.mkotb.configapi.internal.adapt.impl;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
+import org.bukkit.configuration.MemorySection;
 import xyz.mkotb.configapi.ex.InternalProcessingException;
+import xyz.mkotb.configapi.internal.InternalsHelper;
+import xyz.mkotb.configapi.internal.SerializableMemorySection;
 import xyz.mkotb.configapi.internal.adapt.AdapterHandler;
 import xyz.mkotb.configapi.internal.adapt.ObjectAdapter;
 
@@ -25,7 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class CollectionAdapter<E> implements ObjectAdapter<Collection, List<Object>> {
+public class CollectionAdapter<E> implements ObjectAdapter<Collection, Object> {
     private final Class<E> type;
     private final Class<? extends Collection> implementationClass;
     private final AdapterHandler handler;
@@ -55,7 +58,13 @@ public class CollectionAdapter<E> implements ObjectAdapter<Collection, List<Obje
     @Override
     public Collection read(String key, ConfigurationSection section) {
         Collection collection;
-        List<?> originalList = section.getList(key);
+        List<?> originalList;
+
+        if (section.isConfigurationSection(key)) {
+            originalList = new ArrayList<>(section.getConfigurationSection(key).getValues(false).values());
+        } else {
+            originalList = section.getList(key);
+        }
 
         try {
             collection = implementationClass.getDeclaredConstructor(int.class).newInstance(originalList.size());
@@ -74,11 +83,22 @@ public class CollectionAdapter<E> implements ObjectAdapter<Collection, List<Obje
     }
 
     @Override // can't use streams due to abstraction
-    public List<Object> write(Collection collection) {
+    public Object write(Collection collection) {
+        if (!AdapterHandler.isSerializable(type) && !type.isPrimitive()) {
+            MemorySection section = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class);
+            int i = 0;
+
+            for (Object o : collection) {
+                section.set(String.valueOf(++i), handler.adaptOut(o, AdapterHandler.outClass(type)));
+            }
+
+            return section;
+        }
+
         List<Object> list = new ArrayList<>(collection.size());
 
         for (Object o : collection) {
-            list.add(handler.adaptOut(o, type));
+            list.add(handler.adaptOut(o, AdapterHandler.outClass(type)));
         }
 
         return list;

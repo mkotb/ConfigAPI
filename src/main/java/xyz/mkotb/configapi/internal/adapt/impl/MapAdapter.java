@@ -57,7 +57,7 @@ public class MapAdapter<V> implements ObjectAdapter<Map, ConfigurationSection> {
     @Override
     public ConfigurationSection write(Map obj) {
         MemorySection memorySection = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class);
-        obj.forEach((k, v) -> memorySection.set(k.toString(), handler.adaptOut(v, valueClass)));
+        obj.forEach((k, v) -> memorySection.set(k.toString(), handler.adaptOut(v, AdapterHandler.outClass(valueClass))));
         return memorySection;
     }
 }

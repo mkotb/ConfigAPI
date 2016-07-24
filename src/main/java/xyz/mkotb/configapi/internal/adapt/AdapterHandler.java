@@ -88,33 +88,57 @@ public final class AdapterHandler {
         ADAPTERS.replace(clazz, adapter);
     }
 
+    public static boolean isSerializable(Class<?> clazz) {
+        return (ConfigurationSerializable.class.isAssignableFrom(clazz) &&
+                ConfigurationSerializableHelper.isRegistered(clazz)) ||
+                ((FILTER_CLASSES.stream().anyMatch((e) -> e.isAssignableFrom(clazz)))
+                        && !clazz.isArray());
+    }
+
+    public static Class<?> outClass(Class<?> clazz) {
+        if (!isSerializable(clazz)) {
+            return MemorySection.class;
+        }
+
+        if (clazz.isPrimitive()) {
+            return PRIMITIVE_BOXES.get(clazz);
+        }
+
+        return clazz;
+    }
+
     public <I, O> O adaptOut(I input, Class<O> outClass) {
         return adaptOut(input, outClass, null);
     }
 
     public <I, O> O adaptOut(I input, Class<O> outClass, Class<?> type) {
-        if (Collection.class.isAssignableFrom(outClass)) {
+        if (Collection.class.isAssignableFrom(input.getClass())) {
             CollectionAdapter adapter = CollectionAdapter.create(type,
                     (Class<? extends Collection>) outClass, this);
+            System.out.println("collection");
             return outClass.cast(adapter.write((Collection) input));
         }
 
         if (Map.class.isAssignableFrom(outClass)) {
             MapAdapter adapter = MapAdapter.create(type,
                     this);
+            System.out.println("map");
             return outClass.cast(adapter.write((Map) input));
         }
 
         if (outClass.isArray()) {
             ArrayAdapter adapter = ArrayAdapter.create(outClass.getComponentType(), this);
+            System.out.println("array");
             return outClass.cast(adapter.write(input));
         }
 
         if (PRIMITIVE_BOXES.values().contains(outClass)) {
+            System.out.println("primitive");
             return outClass.cast(input);
         }
 
         if (outClass == String.class) {
+            System.out.println("string");
             return outClass.cast(input);
         }
 
@@ -125,6 +149,7 @@ public final class AdapterHandler {
                     input instanceof ConfigurationSerializable) {
                 MemorySection memorySection = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class);
                 ((ConfigurationSerializable) input).serialize().forEach(memorySection::set);
+                System.out.println("serializable");
                 return outClass.cast(memorySection);
             }
 
@@ -143,22 +168,30 @@ public final class AdapterHandler {
                     if (!FILTER_CLASSES.stream().anyMatch((e) -> e.isAssignableFrom(beforeFieldClass))
                             && !fieldClass.isArray()) {
                         fieldClass = MemorySection.class;
+                        System.out.println("expecting a memory section");
                     }
 
                     if (fieldClass.isPrimitive()) {
                         fieldClass = PRIMITIVE_BOXES.get(fieldClass);
+                        System.out.println("expecting a primitive");
                     }
 
                     if (Map.class.isAssignableFrom(fieldClass)) {
                         fieldType = InternalsHelper.typeOf(field, 1);
+                        System.out.println("expecting map, got type");
                     } else if (Collection.class.isAssignableFrom(fieldClass)) {
                         fieldType = InternalsHelper.typeOf(field, 0);
+                        fieldClass = Object.class;
+                        System.out.println("expecting collection, got type");
+                    } else if (fieldClass.isArray()) {
+                        fieldClass = Object[].class;
                     }
 
                     section.set(namingStrategy.rename(field.getName()), adaptOut(value, fieldClass, fieldType));
                 }
             }
 
+            System.out.println("casting section to " + outClass.getName());
             return outClass.cast(section);
         }
 

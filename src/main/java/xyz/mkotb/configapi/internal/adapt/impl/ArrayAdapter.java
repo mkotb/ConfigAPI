@@ -17,6 +17,9 @@ package xyz.mkotb.configapi.internal.adapt.impl;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
+import org.bukkit.configuration.MemorySection;
+import xyz.mkotb.configapi.internal.InternalsHelper;
+import xyz.mkotb.configapi.internal.SerializableMemorySection;
 import xyz.mkotb.configapi.internal.adapt.AdapterHandler;
 import xyz.mkotb.configapi.internal.adapt.ObjectAdapter;
 
@@ -24,7 +27,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArrayAdapter<E> implements ObjectAdapter<Object, List<Object>> {
+public class ArrayAdapter<E> implements ObjectAdapter<Object, Object> {
     private final Class<E> type;
     private final AdapterHandler handler;
 
@@ -39,7 +42,14 @@ public class ArrayAdapter<E> implements ObjectAdapter<Object, List<Object>> {
 
     @Override
     public Object read(String key, ConfigurationSection section) {
-        List<?> list = section.getList(key);
+        List<?> list;
+
+        if (section.isConfigurationSection(key)) {
+            list = new ArrayList<>(section.getConfigurationSection(key).getValues(false).values());
+        } else {
+            list = section.getList(key);
+        }
+
         Object array = Array.newInstance(type, list.size());
 
         for (int i = 0; i < list.size(); i++) {
@@ -54,14 +64,25 @@ public class ArrayAdapter<E> implements ObjectAdapter<Object, List<Object>> {
     }
 
     @Override
-    public List<Object> write(Object obj) {
+    public Object write(Object obj) {
         int length = Array.getLength(obj);
+
+        if (!AdapterHandler.isSerializable(type) && !type.isPrimitive()) {
+            MemorySection section = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class);
+
+            for (int i = 0; i < length; i++) {
+                section.set(String.valueOf(i + 1), handler.adaptOut(Array.get(obj, i), AdapterHandler.outClass(type)));
+            }
+
+            return section;
+        }
+
         List<Object> list = new ArrayList<>(length);
 
         for (int i = 0; i < length; i++) {
             Object object = Array.get(obj, i);
 
-            list.add(handler.adaptOut(object, type));
+            list.add(handler.adaptOut(object, AdapterHandler.outClass(type)));
         }
 
         return list;
