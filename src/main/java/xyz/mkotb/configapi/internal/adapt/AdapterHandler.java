@@ -22,6 +22,7 @@ import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import xyz.mkotb.configapi.Coloured;
 import xyz.mkotb.configapi.RequiredField;
+import xyz.mkotb.configapi.comment.Self;
 import xyz.mkotb.configapi.ex.ClassStructureException;
 import xyz.mkotb.configapi.ex.InvalidConfigurationException;
 import xyz.mkotb.configapi.internal.InternalsHelper;
@@ -118,7 +119,7 @@ public final class AdapterHandler {
             return outClass.cast(adapter.write((Collection) input));
         }
 
-        if (Map.class.isAssignableFrom(outClass)) {
+        if (Map.class.isAssignableFrom(input.getClass())) {
             MapAdapter adapter = MapAdapter.create(type,
                     this);
             return outClass.cast(adapter.write((Map) input));
@@ -150,6 +151,7 @@ public final class AdapterHandler {
             MemorySection section = InternalsHelper.newInstanceWithoutInit(SerializableMemorySection.class);
             InternalsHelper.setField("map", section, new LinkedHashMap());
             Field[] fields = input.getClass().getDeclaredFields();
+            Field selfField = null;
 
             for (Field field : fields) {
                 Object value = InternalsHelper.getField(field, input);
@@ -158,6 +160,16 @@ public final class AdapterHandler {
                     Class<?> fieldType = null;
                     Class<?> fieldClass = field.getType();
                     Class<?> beforeFieldClass = fieldClass;
+
+                    if (field.getDeclaredAnnotation(Self.class) != null) {
+                        if (!ConfigurationSection.class.isAssignableFrom(beforeFieldClass)) {
+                            throw new ClassStructureException("Field " + field.getName() + " with @Self annotation is not a " +
+                                    "configuration section, is " + beforeFieldClass.getName());
+                        }
+
+                        selfField = field;
+                        continue;
+                    }
 
                     if (!FILTER_CLASSES.stream().anyMatch((e) -> e.isAssignableFrom(beforeFieldClass))
                             && !fieldClass.isArray()) {
@@ -170,6 +182,7 @@ public final class AdapterHandler {
 
                     if (Map.class.isAssignableFrom(fieldClass)) {
                         fieldType = InternalsHelper.typeOf(field, 1);
+                        fieldClass = ConfigurationSection.class;
                     } else if (Collection.class.isAssignableFrom(fieldClass)) {
                         fieldType = InternalsHelper.typeOf(field, 0);
                         fieldClass = Object.class;
@@ -185,6 +198,18 @@ public final class AdapterHandler {
                     }
 
                     section.set(namingStrategy.rename(field.getName()), obj);
+                }
+            }
+
+            if (selfField != null) {
+                ConfigurationSection selfSec = InternalsHelper.getField(selfField, input);
+
+                if (selfSec != null) {
+                    selfSec.getValues(false).forEach((key, value) -> {
+                        if (!section.contains(key)) {
+                            section.set(key, value);
+                        }
+                    });
                 }
             }
 
@@ -234,13 +259,14 @@ public final class AdapterHandler {
         if (oldAdapter == null) {
             if (ConfigurationSerializableHelper.isRegistered(inClass) &&
                     ConfigurationSerializable.class.isAssignableFrom(inClass)) {
-                return ConfigurationSerializableHelper.deserialize(ConfigurationSerializableHelper.toMap(section),
+                return ConfigurationSerializableHelper.deserialize(ConfigurationSerializableHelper.toMap(section.getConfigurationSection(key)),
                         inClass);
             }
 
             ConfigurationSection readingSection = (key == null) ? section : section.getConfigurationSection(key);
             I instance = InternalsHelper.newInstance(inClass);
             Field[] fields = inClass.getDeclaredFields();
+            Field selfField = null;
 
             for (Field field : fields) {
                 if (Modifier.isTransient(field.getModifiers())) {
@@ -248,6 +274,16 @@ public final class AdapterHandler {
                 }
 
                 String name = namingStrategy.rename(field.getName());
+
+                if (field.getDeclaredAnnotation(Self.class) != null) {
+                    if (!ConfigurationSection.class.isAssignableFrom(field.getType())) {
+                        throw new ClassStructureException("Field " + field.getName() + " with @Self annotation is not a " +
+                                "configuration section, is " + field.getType().getName());
+                    }
+
+                    selfField = field;
+                    continue;
+                }
 
                 if (!readingSection.contains(name)) {
                     if (field.getAnnotation(RequiredField.class) != null) {
@@ -277,6 +313,10 @@ public final class AdapterHandler {
                 }
 
                 InternalsHelper.setField(field, instance, adaptIn(readingSection, name, fieldClass, fieldType));
+            }
+
+            if (selfField != null) {
+                InternalsHelper.setField(selfField, instance, readingSection);
             }
 
             return instance;
