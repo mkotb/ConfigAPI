@@ -54,8 +54,12 @@ public final class ConfigFactory {
     }
 
     public <T> T fromFile(String name, Class<T> classOf) {
-        File config = new File(configDirectory(), name + ".yml");
+        return fromFile(new File(configDirectory(), name + ".yml"), classOf);
+    }
 
+    public <T> T fromFile(File config, Class<T> classOf) {
+        String rawName = config.getName();
+        String name = rawName.substring(0, rawName.lastIndexOf('.') + 1);
         if (!config.exists()) {
             CentralDummyHolder dummyHolder = CentralDummyHolder.instance();
             T dummy;
