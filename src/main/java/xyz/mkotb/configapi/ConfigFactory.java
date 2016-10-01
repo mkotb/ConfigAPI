@@ -54,8 +54,10 @@ public final class ConfigFactory {
     }
 
     public <T> T fromFile(String name, Class<T> classOf) {
-        File config = new File(configDirectory(), name + ".yml");
+        return fromFile(new File(configDirectory(), name + ".yml"), classOf);
+    }
 
+    public <T> T fromFile(File config, Class<T> classOf) {
         if (!config.exists()) {
             CentralDummyHolder dummyHolder = CentralDummyHolder.instance();
             T dummy;
@@ -70,7 +72,7 @@ public final class ConfigFactory {
             }
 
             colourizeFields(dummy);
-            save(name, dummy);
+            save(config, dummy);
             dummyHolder.insertDummy(classOf, dummy);
             return dummy;
         }
@@ -81,8 +83,10 @@ public final class ConfigFactory {
     }
 
     public <T> void save(String name, T object) {
-        File config = new File(configDirectory(), name + ".yml");
+        save(new File(configDirectory(), name + ".yml"), object);
+    }
 
+    public <T> void save(File config, T object) {
         if (!config.exists()) {
             try {
                 config.getParentFile().mkdirs();
