@@ -63,7 +63,7 @@ public final class CommentHelper {
 
     public static String[] valueFrom(Annotation annotation) {
         if (annotation instanceof Comment) {
-            return new String[] {((Comment) annotation).value()};
+            return ((Comment) annotation).value();
         }
 
         if (annotation instanceof HeaderComment) {
