@@ -5,7 +5,7 @@ This project is a GSON-like project for Bukkit's YML Config API. This project is
 <dependency>
   <groupId>xyz.mkotb</groupId>
   <artifactId>config-api</artifactId>
-  <version>1.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 
@@ -34,7 +34,7 @@ public class MyPlugin extends JavaPlugin {
     }
 }
 
-@HeaderComment("This is my header comment")
+@Comment("This is my header comment")
 public class MyConfig {
                     // init values will be saved as part of the "default config"
     private String startMessage = "This awesome bukkit plugin has started!";
