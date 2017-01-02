@@ -69,7 +69,7 @@ public final class AdapterHandler {
         ADAPTERS.put(AtomicLongArray.class, new AtomicLongArrayAdapter());
 
         FILTER_CLASSES.addAll(ADAPTERS.keySet());
-        FILTER_CLASSES.addAll(PRIMITIVE_BOXES.keySet());
+        FILTER_CLASSES.addAll(PRIMITIVE_BOXES.values());
         FILTER_CLASSES.add(String.class);
         FILTER_CLASSES.add(Map.class);
         FILTER_CLASSES.add(Collection.class);
@@ -92,17 +92,12 @@ public final class AdapterHandler {
     public static boolean isSerializable(Class<?> clazz) {
         return (ConfigurationSerializable.class.isAssignableFrom(clazz) &&
                 ConfigurationSerializableHelper.isRegistered(clazz)) ||
-                ((FILTER_CLASSES.stream().anyMatch((e) -> e.isAssignableFrom(clazz)))
-                        && !clazz.isArray());
+                ((FILTER_CLASSES.stream().anyMatch((e) -> e.isAssignableFrom(clazz) || clazz.equals(e))));
     }
 
     public static Class<?> outClass(Class<?> clazz) {
         if (!isSerializable(clazz)) {
             return MemorySection.class;
-        }
-
-        if (clazz.isPrimitive()) {
-            return PRIMITIVE_BOXES.get(clazz);
         }
 
         return clazz;
@@ -125,12 +120,13 @@ public final class AdapterHandler {
             return outClass.cast(adapter.write((Map) input));
         }
 
-        if (outClass.isArray()) {
-            ArrayAdapter adapter = ArrayAdapter.create(outClass.getComponentType(), this);
+        if (input.getClass().isArray()) {
+            Class<?> cls = input.getClass();
+            ArrayAdapter adapter = ArrayAdapter.create(cls.getComponentType(), this);
             return outClass.cast(adapter.write(input));
         }
 
-        if (PRIMITIVE_BOXES.values().contains(outClass)) {
+        if (PRIMITIVE_BOXES.values().contains(outClass) || input.getClass().isPrimitive()) {
             return outClass.cast(input);
         }
 
@@ -154,6 +150,10 @@ public final class AdapterHandler {
             Field selfField = null;
 
             for (Field field : fields) {
+                if (Modifier.isTransient(field.getModifiers())) {
+                    continue;
+                }
+
                 Object value = InternalsHelper.getField(field, input);
 
                 if (value != null) {
@@ -176,8 +176,8 @@ public final class AdapterHandler {
                         fieldClass = MemorySection.class;
                     }
 
-                    if (fieldClass.isPrimitive()) {
-                        fieldClass = PRIMITIVE_BOXES.get(fieldClass);
+                    if (beforeFieldClass.isPrimitive()) {
+                        fieldClass = PRIMITIVE_BOXES.get(beforeFieldClass);
                     }
 
                     if (Map.class.isAssignableFrom(fieldClass)) {
@@ -187,7 +187,7 @@ public final class AdapterHandler {
                         fieldType = InternalsHelper.typeOf(field, 0);
                         fieldClass = Object.class;
                     } else if (fieldClass.isArray()) {
-                        fieldClass = Object[].class;
+                        fieldClass = Object.class;
                     }
 
                     Object obj = adaptOut(value, fieldClass, fieldType);

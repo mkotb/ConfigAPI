@@ -82,6 +82,11 @@ public class ArrayAdapter<E> implements ObjectAdapter<Object, Object> {
         for (int i = 0; i < length; i++) {
             Object object = Array.get(obj, i);
 
+            if (type.isPrimitive() || type == String.class) {
+                list.add(object);
+                continue;
+            }
+
             list.add(handler.adaptOut(object, AdapterHandler.outClass(type)));
         }
 
