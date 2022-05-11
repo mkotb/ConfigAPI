@@ -21,6 +21,7 @@ import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.enchantments.Enchantment;
 import xyz.mkotb.configapi.Coloured;
 import xyz.mkotb.configapi.RequiredField;
 import xyz.mkotb.configapi.comment.Self;
