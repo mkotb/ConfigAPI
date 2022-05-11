@@ -17,6 +17,7 @@ package xyz.mkotb.configapi.internal.adapt;
 
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -59,8 +60,9 @@ public final class AdapterHandler {
         ADAPTERS.put(UUID.class, new UUIDAdapter());
 
         ADAPTERS.put(ConfigurationSection.class, new ConfigurationSectionAdapter());
-        ADAPTERS.put(EnchantmentAdapter.class, new EnchantmentAdapter());
+        ADAPTERS.put(Enchantment.class, new EnchantmentAdapter());
         ADAPTERS.put(OfflinePlayer.class, new OfflinePlayerAdapter());
+        ADAPTERS.put(Sound.class, new SoundAdapter());
 
         ADAPTERS.put(AtomicBoolean.class, new AtomicBooleanAdapter());
         ADAPTERS.put(AtomicInteger.class, new AtomicIntegerAdapter());
