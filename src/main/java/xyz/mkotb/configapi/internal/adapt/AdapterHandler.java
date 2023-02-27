@@ -87,7 +87,8 @@ public final class AdapterHandler {
     }
     
     public static <I> void registerAdapter(Class<I> clazz, ObjectAdapter<I, ?> adapter) {
-        ADAPTERS.replace(clazz, adapter);
+        if (!ADAPTERS.replace(clazz, adapter))
+            ADAPTERS.add(clazz, adapter);
     }
 
     public static boolean isSerializable(Class<?> clazz) {
