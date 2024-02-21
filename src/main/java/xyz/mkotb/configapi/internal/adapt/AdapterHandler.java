@@ -17,7 +17,7 @@ package xyz.mkotb.configapi.internal.adapt;
 
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.enchantment.Enchantment;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -35,9 +35,11 @@ import xyz.mkotb.configapi.internal.naming.NamingStrategy;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.*;
+import java.util.stream.Collectors;
 
 public final class AdapterHandler {
     private static final Map<Class<?>, Class<?>> PRIMITIVE_BOXES = new ConcurrentHashMap<>();
@@ -196,6 +198,20 @@ public final class AdapterHandler {
                     if (obj instanceof String && field.isAnnotationPresent(Coloured.class)) {
                         Coloured annotation = field.getDeclaredAnnotation(Coloured.class);
                         obj = translateAlternateColorCodes(annotation.value(), ChatColor.COLOR_CHAR, (String) obj);
+                    }
+
+                    if (obj instanceof List && field.isAnnotationPresent(Coloured.class)) {
+                        Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType())
+                                .getActualTypeArguments()[0];
+
+                        if (genericType.equals(String.class)) {
+                            Coloured annotation = field.getDeclaredAnnotation(Coloured.class);
+                            obj = ((List<String>) obj)
+                                    .stream()
+                                    .map(text -> translateAlternateColorCodes(
+                                            annotation.value(), ChatColor.COLOR_CHAR, text)
+                                    ).collect(Collectors.toList());
+                        }
                     }
 
                     section.set(namingStrategy.rename(field.getName()), obj);
