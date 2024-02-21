@@ -34,7 +34,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class ConfigFactory {
     private volatile NamingStrategy namingStrategy = new CamelCaseNamingStrategy();
@@ -130,16 +133,32 @@ public final class ConfigFactory {
                 continue;
             }
 
-            if (field.getType() != String.class) {
-                continue;
-            }
+            if (field.getType() == String.class) {
+                Coloured annotation = field.getDeclaredAnnotation(Coloured.class);
+                String value = InternalsHelper.getField(field, object);
 
-            Coloured annotation = field.getDeclaredAnnotation(Coloured.class);
-            String value = InternalsHelper.getField(field, object);
+                if (value != null) {
+                    InternalsHelper.setField(field, object, AdapterHandler.translateAlternateColorCodes(
+                            ChatColor.COLOR_CHAR, annotation.value(), value));
+                }
+            } else if (field.getType() == List.class) {
+                Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType())
+                        .getActualTypeArguments()[0];
 
-            if (value != null) {
-                InternalsHelper.setField(field, object, AdapterHandler.translateAlternateColorCodes(
-                        ChatColor.COLOR_CHAR, annotation.value(), value));
+                if (genericType.equals(String.class)) {
+                    Coloured annotation = field.getDeclaredAnnotation(Coloured.class);
+                    List<String> value = InternalsHelper.getField(field, object);
+
+                    if (value != null) {
+                        List<String> translated = value
+                                .stream()
+                                .map(s -> AdapterHandler.translateAlternateColorCodes(
+                                        ChatColor.COLOR_CHAR, annotation.value(), s
+                                )).collect(Collectors.toList());
+
+                        InternalsHelper.setField(field, object, translated);
+                    }
+                }
             }
         }
 

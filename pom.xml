@@ -6,7 +6,7 @@
 
     <groupId>xyz.mkotb</groupId>
     <artifactId>config-api</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
 
     <name>ConfigAPI</name>
     <description>GSON-like ORM for the Bukkit Config API</description>
@@ -112,34 +112,37 @@
                 <version>2.4</version>
             </plugin>
 
-            <plugin>
-                <groupId>com.mycila.maven-license-plugin</groupId>
-                <artifactId>maven-license-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <quiet>true</quiet>
-                            <encoding>UTF-8</encoding>
-                            <strictCheck>true</strictCheck>
-                            <header>./LICENSE</header>
-                            <mapping>
-                                <java>SLASHSTAR_STYLE</java>
-                            </mapping>
-                            <keywords>
-                                <keyword>license</keyword>
-                            </keywords>
-                            <includes>
-                                <include>src/main/java/**</include>
-                                <include>src/test/java/**</include>
-                            </includes>
-                        </configuration>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>format</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--
+            Plugin 'com.mycila.maven-license-plugin:maven-license-plugin:' not found
+            -->
+<!--            <plugin>-->
+<!--                <groupId>com.mycila.maven-license-plugin</groupId>-->
+<!--                <artifactId>maven-license-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <configuration>-->
+<!--                            <quiet>true</quiet>-->
+<!--                            <encoding>UTF-8</encoding>-->
+<!--                            <strictCheck>true</strictCheck>-->
+<!--                            <header>./LICENSE</header>-->
+<!--                            <mapping>-->
+<!--                                <java>SLASHSTAR_STYLE</java>-->
+<!--                            </mapping>-->
+<!--                            <keywords>-->
+<!--                                <keyword>license</keyword>-->
+<!--                            </keywords>-->
+<!--                            <includes>-->
+<!--                                <include>src/main/java/**</include>-->
+<!--                                <include>src/test/java/**</include>-->
+<!--                            </includes>-->
+<!--                        </configuration>-->
+<!--                        <phase>clean</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>format</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 

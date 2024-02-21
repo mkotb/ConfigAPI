@@ -5,7 +5,7 @@ This project is a GSON-like project for Bukkit's YML Config API. This project is
 <dependency>
   <groupId>xyz.mkotb</groupId>
   <artifactId>config-api</artifactId>
-  <version>1.0.1</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 
